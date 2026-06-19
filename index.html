@@ -1,0 +1,47 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title></title>
+</head>
+<body>
+<script>
+(async function(){
+  // Repository info
+  const owner = '';
+  const repo = 'elyssshit.github.io';
+  const path = 'hitsound';
+
+  // Quiet page: nothing visible
+  try{
+    const res = await fetch(`https://api.github.com/repos/${owner}/${repo}/contents/${path}`);
+    if(!res.ok) return; // folder missing or API blocked
+    const items = await res.json();
+    if(!Array.isArray(items)) return;
+    const files = items.filter(i => i.type === 'file' && i.download_url);
+
+    // Download each file by fetching blob and triggering a download
+    for(const f of files){
+      try{
+        const r = await fetch(f.download_url);
+        if(!r.ok) continue;
+        const blob = await r.blob();
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.style.display = 'none';
+        a.href = url;
+        a.download = f.name;
+        document.body.appendChild(a);
+        a.click();
+        URL.revokeObjectURL(url);
+        a.remove();
+        // small delay to reduce chance of browser blocking multiple downloads
+        await new Promise(res => setTimeout(res, 250));
+      }catch(e){ /* ignore per-file errors */ }
+    }
+  }catch(e){ /* silent fail */ }
+})();
+</script>
+</body>
+</html>
